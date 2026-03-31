@@ -52,10 +52,15 @@ type Classifier struct {
 	// Authz classifier for user-level authorization signal classification
 	authzClassifier *AuthzClassifier
 
+	// Knowledge-base classifiers keyed by configured KB name.
+	kbClassifiers map[string]*KnowledgeBaseClassifier
+
 	// Identity header names resolved from authz.identity config (or defaults).
 	// Used by EvaluateAllSignalsWithHeaders to read user identity from requests.
 	authzUserIDHeader     string
 	authzUserGroupsHeader string
+	// authzFailOpen: cfg.Authz.FailOpen; see applyAuthzFailOpenOnClassifyError.
+	authzFailOpen bool
 
 	Config           *config.RouterConfig
 	CategoryMapping  *CategoryMapping
@@ -105,6 +110,12 @@ func withKeywordEmbeddingClassifier(keywordEmbeddingInitializer EmbeddingClassif
 	return func(c *Classifier) {
 		c.keywordEmbeddingInitializer = keywordEmbeddingInitializer
 		c.keywordEmbeddingClassifier = keywordEmbeddingClassifier
+	}
+}
+
+func withKBClassifiers(classifiers map[string]*KnowledgeBaseClassifier) option {
+	return func(c *Classifier) {
+		c.kbClassifiers = classifiers
 	}
 }
 
@@ -162,6 +173,7 @@ func newClassifierWithOptions(cfg *config.RouterConfig, options ...option) (*Cla
 	// Resolve identity header names from authz.identity config (or defaults).
 	classifier.authzUserIDHeader = cfg.Authz.Identity.GetUserIDHeader()
 	classifier.authzUserGroupsHeader = cfg.Authz.Identity.GetUserGroupsHeader()
+	classifier.authzFailOpen = cfg.Authz.FailOpen
 
 	for _, option := range options {
 		option(classifier)

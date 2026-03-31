@@ -434,6 +434,8 @@ config:
   global:
     router:
       strategy: priority
+    model_catalog:
+      kbs: []
     services:
       api:
         batch_classification:
@@ -510,3 +512,7 @@ resources:
   requests:
     cpu: "1"
     memory: "5Gi"
+
+# E2E/Kind: disable PVC for reliable CI (same as other e2e profiles).
+persistence:
+  enabled: false

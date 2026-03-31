@@ -42,6 +42,8 @@ type RequestContext struct {
 	OriginalRequestBody []byte
 	RequestModel        string
 	RequestQuery        string
+	// CacheQuery is the semantic-cache lookup key (may include user scope); empty means fall back to RequestQuery.
+	CacheQuery          string
 	StartTime           time.Time
 	ProcessingStartTime time.Time
 
@@ -94,6 +96,7 @@ type RequestContext struct {
 	VSRMatchedAuthz        []string // Matched authz rule names for user-level routing
 	VSRMatchedJailbreak    []string // Matched jailbreak rule names (confidence >= threshold)
 	VSRMatchedPII          []string // Matched PII rule names (denied PII types detected)
+	VSRMatchedKB           []string // Matched knowledge-base signal names
 	VSRMatchedProjection   []string // Matched projection mapping outputs
 
 	// Endpoint tracking for windowed metrics
