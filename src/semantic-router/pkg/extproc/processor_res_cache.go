@@ -65,8 +65,8 @@ func (r *OpenAIRouter) cacheStreamingResponse(ctx *RequestContext) error {
 		return nil
 	}
 
-	usage := extractStreamingUsage(ctx)
-	r.reportStreamingUsageMetrics(ctx, usage)
+	usage, cacheUsage := extractStreamingUsage(ctx)
+	r.reportStreamingUsageMetrics(ctx, usage, cacheUsage)
 
 	reconstructedJSON, err := buildReconstructedStreamingResponse(ctx, usage)
 	if err != nil {
