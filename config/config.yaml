@@ -489,11 +489,6 @@ routing:
             enabled: true
             mode: insert
             system_prompt: You are a senior business consultant. Give practical recommendations and clear tradeoffs.
-        - type: pii
-          configuration:
-            enabled: true
-            threshold: 0.85
-            pii_types_allowed: [EMAIL_ADDRESS]
         - type: semantic-cache
           configuration:
             enabled: true
@@ -577,10 +572,10 @@ routing:
         - type: router_replay
           configuration:
             enabled: true
-            max_records: 5000
+            max_records: 10000
             capture_request_body: true
-            capture_response_body: false
-            max_body_bytes: 65536
+            capture_response_body: true
+            max_body_bytes: 4096
 
     - name: computer-science-remom-route
       description: ReMoM route for complex computer science prompts.
@@ -776,12 +771,6 @@ routing:
           cost_weight: 0.1
           quality_gap_threshold: 0.08
           normalize_scores: true
-      plugins:
-        - type: jailbreak
-          configuration:
-            enabled: true
-            threshold: 0.6
-
     - name: spanish_rl_route
       description: RL-driven route for Spanish-language traffic with Milvus RAG.
       priority: 135
@@ -1262,6 +1251,7 @@ global:
               tokens_per_unit: 2000000
               unit: hour
     router_replay:
+      enabled: true
       store_backend: postgres
       ttl_seconds: 2592000
       async_writes: true
@@ -1595,6 +1585,13 @@ global:
           enable_soft_matching: true
           top_k: 1
           min_score_threshold: 0.45
+          prototype_scoring:
+            enabled: true
+            cluster_similarity_threshold: 0.9
+            max_prototypes: 8
+            best_weight: 0.75
+            top_m: 2
+            margin_threshold: 0.0
     system:
       prompt_guard: models/mmbert32k-jailbreak-detector-merged
       domain_classifier: models/mmbert32k-intent-classifier-merged
@@ -1626,6 +1623,13 @@ global:
           path: kb/privacy/
           manifest: labels.json
         threshold: 0.55
+        prototype_scoring:
+          enabled: true
+          cluster_similarity_threshold: 0.9
+          max_prototypes: 8
+          best_weight: 0.75
+          top_m: 2
+          margin_threshold: 0.0
         label_thresholds:
           prompt_injection: 0.7
         groups:
@@ -1727,6 +1731,21 @@ global:
         preference:
           use_contrastive: true
           embedding_model: models/preference-encoder
+          prototype_scoring:
+            enabled: true
+            cluster_similarity_threshold: 0.9
+            max_prototypes: 8
+            best_weight: 0.75
+            top_m: 2
+            margin_threshold: 0.0
+      complexity:
+        prototype_scoring:
+          enabled: true
+          cluster_similarity_threshold: 0.9
+          max_prototypes: 6
+          best_weight: 0.75
+          top_m: 2
+          margin_threshold: 0.0
       hallucination_mitigation:
         enabled: true
         on_hallucination_detected: annotate

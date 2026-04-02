@@ -35,6 +35,7 @@ func defaultCanonicalServiceGlobal() CanonicalServiceGlobal {
 			MaxResponses: 1000,
 		},
 		RouterReplay: RouterReplayConfig{
+			Enabled:      true,
 			StoreBackend: "postgres",
 			TTLSeconds:   2592000,
 			AsyncWrites:  false,
@@ -162,6 +163,7 @@ func defaultCanonicalModelModules() CanonicalModelModules {
 	return CanonicalModelModules{
 		PromptGuard:             defaultPromptGuardModule(),
 		Classifier:              defaultClassifierModule(),
+		Complexity:              ComplexityModelConfig{}.WithDefaults(),
 		HallucinationMitigation: defaultHallucinationModule(),
 		FeedbackDetector:        defaultFeedbackDetectorModule(),
 	}

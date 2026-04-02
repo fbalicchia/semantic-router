@@ -99,8 +99,6 @@ routing:
         - model: qwen-2.5-72b
           use_reasoning: false
       plugins:
-        - type: pii
-        - type: jailbreak
         - type: system_prompt
         - type: semantic-cache
         - type: header_mutation
@@ -120,7 +118,6 @@ routing:
         - model: qwen-2.5-72b
           use_reasoning: false
       plugins:
-        - type: pii
         - type: semantic-cache
         - type: header_mutation
     - name: general_business
@@ -277,6 +274,7 @@ global:
           pii_mapping_path: models/mmbert32k-pii-detector-merged/pii_type_mapping.json
           model_ref: pii_classifier
         preference: {}
+      complexity: {}
       hallucination_mitigation:
         fact_check:
           model_id: ""

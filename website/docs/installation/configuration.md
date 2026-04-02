@@ -41,12 +41,14 @@ The detailed background is in [Unified Config Contract v0.3](../proposals/unifie
   - `global.router` groups router-engine control knobs such as config-source selection, route-cache, and model-selection defaults
   - `global.router.config_source` selects whether runtime config comes from the canonical YAML file (`file`) or from in-process Kubernetes CRD reconciliation (`kubernetes`)
   - `global.services` groups shared APIs and control-plane services such as `response_api`, `router_replay`, `observability`, `authz`, and `ratelimit`
+  - `global.services.router_replay.enabled` acts as the default replay switch for every decision; route-local `router_replay.enabled: false` is the explicit opt-out
   - `global.stores` groups shared storage-backed services such as `semantic_cache`, `memory`, and `vector_store`
 - `global.integrations` groups helper runtime integrations such as `tools` and `looper`
 - `global.model_catalog` groups router-owned model assets such as embeddings, system models, external models, reusable classifiers, and model-backed modules
 - `global.model_catalog.embeddings.semantic.embedding_config.top_k` limits how many ranked embedding rules are emitted for routing after scoring; the built-in default is `1`
+- `prototype_scoring` is the shared prototype-aware scoring block for embedding-backed signal families; use it under `global.model_catalog.embeddings.semantic.embedding_config`, `global.model_catalog.modules.classifier.preference`, `global.model_catalog.kbs[]`, and `global.model_catalog.modules.complexity` when you want exemplar banks compressed into representative prototypes
 - `global.model_catalog.classifiers[]` is the reusable registry for startup-loaded classifier packages such as taxonomy classifiers
-- `global.model_catalog.modules` groups capability modules such as `prompt_guard`, `classifier`, and `hallucination_mitigation`
+- `global.model_catalog.modules` groups capability modules such as `prompt_guard`, `classifier`, `complexity`, and `hallucination_mitigation`
 
 ## Canonical example
 
@@ -163,6 +165,8 @@ global:
     observability:
       metrics:
         enabled: true
+    router_replay:
+      enabled: true
 ```
 
 For `routing.signals.structure`, `feature.type: density` now uses built-in multilingual text-unit normalization. The router counts each CJK character as one unit, counts contiguous runs of other letters and digits as one unit, and ignores punctuation, so the same density rule shape behaves consistently across English, Chinese, and mixed-script prompts without a separate `normalize_by` field.

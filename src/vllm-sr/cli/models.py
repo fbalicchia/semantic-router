@@ -199,6 +199,34 @@ class ComplexityCandidates(BaseModel):
     """Complexity candidates configuration."""
 
     candidates: List[str]
+    image_candidates: Optional[List[str]] = None
+
+
+class PrototypeScoringConfig(BaseModel):
+    """Prototype-bank construction and scoring controls for embedding-backed signals."""
+
+    enabled: Optional[bool] = None
+    cluster_similarity_threshold: Optional[float] = None
+    max_prototypes: Optional[int] = None
+    best_weight: Optional[float] = None
+    top_m: Optional[int] = None
+    margin_threshold: Optional[float] = None
+
+
+class EmbeddingClassifierConfig(BaseModel):
+    """Embedding classifier tuning, including prototype-aware label scoring controls."""
+
+    model_type: Optional[str] = None
+    preload_embeddings: Optional[bool] = None
+    target_dimension: Optional[int] = None
+    target_layer: Optional[int] = None
+    enable_soft_matching: Optional[bool] = None
+    top_k: Optional[int] = None
+    min_score_threshold: Optional[float] = None
+    prototype_scoring: Optional[PrototypeScoringConfig] = None
+
+    class Config:
+        extra = "allow"
 
 
 class ComplexityRule(BaseModel):
@@ -399,7 +427,10 @@ class PluginType(str, Enum):
     ROUTER_REPLAY = "router_replay"
     MEMORY = "memory"
     RAG = "rag"
+    IMAGE_GEN = "image_gen"
     FAST_RESPONSE = "fast_response"
+    REQUEST_PARAMS = "request_params"
+    RESPONSE_JAILBREAK = "response_jailbreak"
     TOOLS = "tools"
 
 
@@ -422,6 +453,23 @@ class FastResponsePluginConfig(BaseModel):
     """Configuration for fast_response plugin."""
 
     message: str
+
+
+class RequestParamsPluginConfig(BaseModel):
+    """Configuration for request_params plugin."""
+
+    blocked_params: Optional[List[str]] = None
+    max_tokens_limit: Optional[int] = Field(default=None, ge=1)
+    max_n: Optional[int] = Field(default=None, ge=1)
+    strip_unknown: Optional[bool] = None
+
+
+class ResponseJailbreakPluginConfig(BaseModel):
+    """Configuration for response_jailbreak plugin."""
+
+    enabled: bool
+    threshold: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    action: Optional[Literal["block", "header", "none"]] = None
 
 
 class ToolsPluginConfig(BaseModel):
@@ -477,12 +525,12 @@ class RouterReplayPluginConfig(BaseModel):
 
     enabled: bool = True
     max_records: int = Field(
-        default=200,
+        default=10000,
         gt=0,
-        description="Maximum records in memory (must be > 0, default: 200)",
+        description="Maximum records in memory (must be > 0, default: 10000)",
     )
-    capture_request_body: bool = False  # Capture request payloads
-    capture_response_body: bool = False  # Capture response payloads
+    capture_request_body: bool = True  # Capture request payloads
+    capture_response_body: bool = True  # Capture response payloads
     max_body_bytes: int = Field(
         default=4096,
         gt=0,
@@ -560,7 +608,7 @@ class RAGPluginConfig(BaseModel):
     # Optional: Context injection mode
     # - "tool_role": Inject as tool role messages (compatible with hallucination detection)
     # - "system_prompt": Prepend to system prompt
-    injection_mode: Optional[str] = Field(
+    injection_mode: Optional[Literal["tool_role", "system_prompt"]] = Field(
         default=None,
         description="Injection mode: tool_role (default) or system_prompt",
     )
@@ -576,7 +624,7 @@ class RAGPluginConfig(BaseModel):
     # - "skip": Continue without context (default)
     # - "block": Return error response
     # - "warn": Continue with warning header
-    on_failure: Optional[str] = Field(
+    on_failure: Optional[Literal["skip", "block", "warn"]] = Field(
         default=None,
         description="On failure: skip (default), block, or warn",
     )
@@ -625,6 +673,19 @@ class PluginConfig(BaseModel):
         elif hasattr(data.get("type"), "value"):
             data["type"] = data["type"].value
         return data
+
+
+class ImageGenPluginConfig(BaseModel):
+    """Configuration for image_gen plugin."""
+
+    enabled: bool
+    backend: str
+    backend_config: Optional[Dict[str, Any]] = None
+    modality_detection: Optional[Dict[str, Any]] = None
+    default_width: Optional[int] = Field(default=None, ge=1)
+    default_height: Optional[int] = Field(default=None, ge=1)
+    max_inference_steps: Optional[int] = Field(default=None, ge=1)
+    timeout_seconds: Optional[int] = Field(default=None, ge=1)
 
 
 class Decision(BaseModel):
@@ -779,9 +840,9 @@ class EmbeddingModelsConfig(BaseModel):
         None,
         description="Path to BERT/MiniLM model (recommended for memory retrieval)",
     )
-    embedding_config: Optional[Dict[str, Any]] = Field(
+    embedding_config: Optional[EmbeddingClassifierConfig] = Field(
         default=None,
-        description="Embedding classifier tuning (model_type/target_dimension/top_k/etc.)",
+        description="Embedding classifier tuning (model_type/target_dimension/top_k/prototype_scoring/etc.)",
     )
     use_cpu: bool = Field(True, description="Use CPU for inference")
 

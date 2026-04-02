@@ -32,13 +32,19 @@ curl -fsSL https://vllm-semantic-router.com/install.sh | bash
 安装脚本会：
 
 - 检测 Python 3.10 或更新版本
-- 将 `vllm-sr` 安装到 `~/.local/share/vllm-sr`
+- 将最新开发版 `vllm-sr` 安装到 `~/.local/share/vllm-sr`
 - 在 `~/.local/bin/vllm-sr` 写入启动器
 - 除非您选择退出，否则为 `vllm-sr serve` 准备 Docker
 - 在可能的情况下自动启动 `vllm-sr serve` 并打开控制台
 - 若无法打开浏览器，则打印控制台访问方式与远程服务器提示
 
 若 `~/.local/bin` 尚未在 `PATH` 中，安装脚本会打印需要添加的 `export` 行。
+
+若您需要最新稳定版，请运行：
+
+```bash
+curl -fsSL https://vllm-semantic-router.com/install.sh | bash -s -- --channel stable
+```
 
 Windows 用户请使用下文手动 PyPI 流程。
 
@@ -49,7 +55,10 @@ Windows 用户请使用下文手动 PyPI 流程。
 python -m venv vsr
 source vsr/bin/activate  # Windows：vsr\Scripts\activate
 
-# 从 PyPI 安装
+# 安装最新开发版
+pip install --pre vllm-sr
+
+# 若需要最新稳定版
 pip install vllm-sr
 ```
 
@@ -156,45 +165,15 @@ vllm-sr serve
 # 指定配置文件
 vllm-sr serve --config my-config.yaml
 
+# 设置路由器日志级别
+vllm-sr serve --log-level debug
+
 # 指定 Docker 镜像
 vllm-sr serve --image ghcr.io/vllm-project/semantic-router/vllm-sr:latest
 
 # 控制镜像拉取策略
 vllm-sr serve --image-pull-policy always
 ```
-
-## Kubernetes 部署
-
-在生产环境使用 Kubernetes 或 OpenShift 时，请使用 **Kubernetes Operator**：
-
-### 使用 Operator 快速开始
-
-```bash
-git clone https://github.com/vllm-project/semantic-router
-cd semantic-router/deploy/operator
-
-make install
-make deploy IMG=ghcr.io/vllm-project/semantic-router-operator:latest
-
-kubectl apply -f config/samples/vllm_v1alpha1_semanticrouter.yaml
-```
-
-**优势：**
-
-- 使用 Kubernetes CRD 的声明式配置
-- 自动检测平台（OpenShift/Kubernetes）
-- 内置高可用与扩缩
-- 集成监控与可观测
-- 生命周期管理与升级
-
-完整说明见 **[Kubernetes Operator 指南](k8s/operator)**。
-
-### 其他 Kubernetes 部署选项
-
-- **[Istio 集成](k8s/istio)** — 服务网格部署
-- **[AI Gateway](k8s/ai-gateway)** — Gateway API 集成
-- **[Production Stack](k8s/production-stack)** — 完整生产环境
-- **[Dynamo](k8s/dynamo)** — 动态配置管理
 
 ## Docker Compose
 
@@ -204,8 +183,8 @@ kubectl apply -f config/samples/vllm_v1alpha1_semanticrouter.yaml
 
 ## 下一步
 
+- **[Install with Operator](k8s/operator)** — 使用 Operator 在 Kubernetes 或 OpenShift 上部署
 - **[配置指南](configuration)** — 高级路由与信号配置
-- **[Kubernetes Operator](k8s/operator)** — 生产级 Kubernetes 部署
 - **[API 文档](../api/router)** — 完整 API 参考
 - **[教程](../tutorials/signal/overview)** — 示例学习
 
