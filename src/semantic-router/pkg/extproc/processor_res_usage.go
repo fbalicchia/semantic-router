@@ -26,11 +26,19 @@ type responseUsageMetrics struct {
 // NON-STREAMING
 // =====================================================================
 
-func parseResponseUsage(responseBody []byte, model string) responseUsageMetrics {
+// parseResponseUsage extracts token usage metrics from a non-streaming response
+// body. The second return value is false when the body could not be parsed
+// (e.g. an upstream error returned a non-JSON body, or usage fields are the
+// wrong type). Callers MUST treat ok=false as "no usage observed" and skip
+// downstream reporting (rate-limit billing, llm_usage events, metrics) — the
+// alternative is silently emitting all-zero usage events that look like a
+// successful free request, which conflates real zero-token responses with
+// upstream failures.
+func parseResponseUsage(responseBody []byte, model string) (responseUsageMetrics, bool) {
 	if !gjson.ValidBytes(responseBody) {
 		logging.Errorf("Error parsing tokens from response: invalid JSON")
 		metrics.RecordRequestError(model, "parse_error")
-		return responseUsageMetrics{}
+		return responseUsageMetrics{}, false
 	}
 
 	promptTokens := gjson.GetBytes(responseBody, "usage.prompt_tokens")
@@ -39,7 +47,7 @@ func parseResponseUsage(responseBody []byte, model string) responseUsageMetrics 
 		(completionTokens.Exists() && completionTokens.Type != gjson.Number) {
 		logging.Errorf("Error parsing tokens from response: usage fields must be numbers")
 		metrics.RecordRequestError(model, "parse_error")
-		return responseUsageMetrics{}
+		return responseUsageMetrics{}, false
 	}
 
 	// Anthropic prompt caching fields (nested under usage.cache_read_input_tokens
@@ -65,7 +73,7 @@ func parseResponseUsage(responseBody []byte, model string) responseUsageMetrics 
 		totalTokens:         totalTokens,
 		cachedInputTokens:   int(cachedInput.Int()),
 		cacheCreationTokens: int(cacheCreation.Int()),
-	}
+	}, true
 }
 
 func (r *OpenAIRouter) reportNonStreamingUsage(

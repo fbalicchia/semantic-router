@@ -13,34 +13,40 @@ import (
 
 func TestParseResponseUsage_ValidJSON(t *testing.T) {
 	body := buildChatCompletionWithUsage(10, 20)
-	usage := parseResponseUsage(body, "test-model")
+	usage, ok := parseResponseUsage(body, "test-model")
 
+	assert.True(t, ok)
 	assert.Equal(t, 10, usage.promptTokens)
 	assert.Equal(t, 20, usage.completionTokens)
 }
 
+// TestParseResponseUsage_InvalidJSON is a regression test for the silent
+// failure where upstream errors (e.g. Bedrock 5xx with empty/non-JSON body)
+// were being recorded as successful zero-token llm_usage events. Parse
+// failure must signal ok=false so callers can skip downstream reporting.
 func TestParseResponseUsage_InvalidJSON(t *testing.T) {
-	usage := parseResponseUsage([]byte(`{not valid json`), "test-model")
+	usage, ok := parseResponseUsage([]byte(`{not valid json`), "test-model")
 
-	assert.Equal(t, 0, usage.promptTokens)
-	assert.Equal(t, 0, usage.completionTokens)
+	assert.False(t, ok, "invalid JSON must signal parse failure to caller")
+	assert.Equal(t, responseUsageMetrics{}, usage)
 }
 
 func TestParseResponseUsage_EmptyBody(t *testing.T) {
-	usage := parseResponseUsage([]byte{}, "test-model")
+	usage, ok := parseResponseUsage([]byte{}, "test-model")
 
-	assert.Equal(t, 0, usage.promptTokens)
-	assert.Equal(t, 0, usage.completionTokens)
+	assert.False(t, ok, "empty body must signal parse failure to caller")
+	assert.Equal(t, responseUsageMetrics{}, usage)
 }
 
 func TestParseResponseUsage_ExtractsUsageFields(t *testing.T) {
-	usage := parseResponseUsage([]byte(`{
+	usage, ok := parseResponseUsage([]byte(`{
 		"usage": {
 			"prompt_tokens": 11,
 			"completion_tokens": 7
 		}
 	}`), "test-model")
 
+	assert.True(t, ok)
 	assert.Equal(t, responseUsageMetrics{
 		promptTokens:     11,
 		completionTokens: 7,
@@ -49,20 +55,24 @@ func TestParseResponseUsage_ExtractsUsageFields(t *testing.T) {
 }
 
 func TestParseResponseUsage_ReturnsZeroForInvalidUsageTypes(t *testing.T) {
-	usage := parseResponseUsage([]byte(`{
+	usage, ok := parseResponseUsage([]byte(`{
 		"usage": {
 			"prompt_tokens": "11",
 			"completion_tokens": 7
 		}
 	}`), "test-model")
 
+	assert.False(t, ok, "wrong-typed usage fields must signal parse failure to caller")
 	assert.Equal(t, responseUsageMetrics{}, usage)
 }
 
+// TestParseResponseUsage_ZeroTokens verifies that a *valid* response with
+// zero usage is distinguishable from a parse failure: ok=true in this case.
 func TestParseResponseUsage_ZeroTokens(t *testing.T) {
 	body := buildChatCompletionWithUsage(0, 0)
-	usage := parseResponseUsage(body, "test-model")
+	usage, ok := parseResponseUsage(body, "test-model")
 
+	assert.True(t, ok, "valid JSON with zero tokens is a real response, not a parse failure")
 	assert.Equal(t, 0, usage.promptTokens)
 	assert.Equal(t, 0, usage.completionTokens)
 }

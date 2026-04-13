@@ -14,8 +14,13 @@ func (r *OpenAIRouter) handleNonStreamingResponseBody(
 	completionLatency time.Duration,
 	initialBodyTransformed bool,
 ) *ext_proc.ProcessingResponse {
-	usage := parseResponseUsage(responseBody, ctx.RequestModel)
-	r.reportNonStreamingUsage(ctx, completionLatency, usage)
+	// Skip usage reporting on parse failure: emitting all-zero llm_usage events
+	// would conflate upstream errors (e.g. 5xx with non-JSON body) with real
+	// successful zero-token responses, hiding failures from observability and
+	// from rate-limit billing.
+	if usage, ok := parseResponseUsage(responseBody, ctx.RequestModel); ok {
+		r.reportNonStreamingUsage(ctx, completionLatency, usage)
+	}
 	r.updateResponseCache(ctx, responseBody)
 
 	finalBody := r.translateResponseBodyForClient(ctx, responseBody)
