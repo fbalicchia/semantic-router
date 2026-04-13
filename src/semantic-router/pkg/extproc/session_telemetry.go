@@ -19,7 +19,7 @@ func (r *OpenAIRouter) sessionTurnPricing(model string) sessiontelemetry.TurnPri
 		Currency:         p.Currency,
 		PromptPer1M:      p.PromptPer1M,
 		CompletionPer1M:  p.CompletionPer1M,
-		CachedInputPer1M: p.CachedInputPer1M,
+		CachedInputPer1M: p.CacheReadPer1M,
 	}
 }
 

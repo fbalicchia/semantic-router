@@ -83,7 +83,7 @@ func (r *OpenAIRouter) reportNonStreamingUsage(
 		})
 	}
 
-	if totalTokens > 0 {
+	if usage.totalTokens > 0 {
 		recordSessionTurn(ctx, usage, r.sessionTurnPricing(ctx.RequestModel))
 	}
 
