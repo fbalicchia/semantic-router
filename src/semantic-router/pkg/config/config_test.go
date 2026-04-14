@@ -1452,6 +1452,33 @@ default_model: "my-alias"
 				resolved := cfg.ResolveExternalModelID("my-alias", "ep1")
 				Expect(resolved).To(Equal("my-alias"))
 			})
+
+			It("should fall back to default key when endpoint type has no mapping", func() {
+				configContent := `
+model_config:
+  "claude-haiku-4-5":
+    external_model_ids:
+      default: "eu.anthropic.claude-haiku-4-5-20251001-v1:0"
+
+categories:
+  - name: "test"
+    model_scores:
+      - model: "claude-haiku-4-5"
+        score: 0.9
+
+default_model: "claude-haiku-4-5"
+`
+				err := os.WriteFile(configFile, []byte(configContent), 0o644)
+				Expect(err).NotTo(HaveOccurred())
+
+				cfg, err := loadLegacyRuntimeConfigForTest(configFile)
+				Expect(err).NotTo(HaveOccurred())
+
+				// No endpoints configured; endpoint type defaults to "vllm" which has no mapping,
+				// so it should fall back to the "default" key.
+				resolved := cfg.ResolveExternalModelID("claude-haiku-4-5", "non-existent-ep")
+				Expect(resolved).To(Equal("eu.anthropic.claude-haiku-4-5-20251001-v1:0"))
+			})
 		})
 
 		Describe("ValidateEndpoints", func() {

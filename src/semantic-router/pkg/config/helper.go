@@ -582,6 +582,12 @@ func (c *RouterConfig) ResolveExternalModelID(modelName string, endpointName str
 		return externalID
 	}
 
+	// Fall back to "default" key — used when provider_model_id is set but no
+	// backend_refs are defined (e.g., Envoy AI Gateway handles the backend).
+	if externalID, ok := modelConfig.ExternalModelIDs["default"]; ok && externalID != "" {
+		return externalID
+	}
+
 	return modelName
 }
 

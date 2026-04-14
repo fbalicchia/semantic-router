@@ -184,6 +184,10 @@ type RequestContext struct {
 
 	// Rate limit context - stored after Check() for post-response Report()
 	RateLimitCtx *ratelimit.Context
+
+	// Rate limit decision from the allow path - used to emit x-ratelimit-*
+	// response headers on successful pass-through responses.
+	RateLimitDecision *ratelimit.Decision
 }
 
 // HasPersonalizedContext returns true if the request/response is tainted with user-specific

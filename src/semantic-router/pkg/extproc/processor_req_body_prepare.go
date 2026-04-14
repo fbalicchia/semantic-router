@@ -130,6 +130,9 @@ func (r *OpenAIRouter) applyRateLimitAndCacheChecks(
 			return r.createRateLimitResponse(decision)
 		}
 		ctx.RateLimitCtx = &rlCtx
+		if decision != nil {
+			ctx.RateLimitDecision = decision
+		}
 	}
 
 	if response, shouldReturn := r.handleCaching(ctx, decisionName); shouldReturn {

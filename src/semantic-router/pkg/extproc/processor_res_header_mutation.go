@@ -115,5 +115,12 @@ func buildResponseHeaderMutation(
 	if ctx.VSRCacheSimilarity > 0 {
 		builder.addFloat("x-vsr-cache-similarity", float64(ctx.VSRCacheSimilarity))
 	}
+	if d := ctx.RateLimitDecision; d != nil {
+		builder.addString("x-ratelimit-limit", strconv.FormatInt(d.Limit, 10))
+		builder.addString("x-ratelimit-remaining", strconv.FormatInt(d.Remaining, 10))
+		if !d.ResetAt.IsZero() {
+			builder.addString("x-ratelimit-reset", strconv.FormatInt(d.ResetAt.Unix(), 10))
+		}
+	}
 	return builder.mutation()
 }
