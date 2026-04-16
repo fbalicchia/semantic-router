@@ -41,8 +41,15 @@ func parseResponseUsage(responseBody []byte, model string) (responseUsageMetrics
 		return responseUsageMetrics{}, false
 	}
 
+	// Try OpenAI format first, fall back to Anthropic format (input_tokens/output_tokens).
 	promptTokens := gjson.GetBytes(responseBody, "usage.prompt_tokens")
+	if !promptTokens.Exists() {
+		promptTokens = gjson.GetBytes(responseBody, "usage.input_tokens")
+	}
 	completionTokens := gjson.GetBytes(responseBody, "usage.completion_tokens")
+	if !completionTokens.Exists() {
+		completionTokens = gjson.GetBytes(responseBody, "usage.output_tokens")
+	}
 	if (promptTokens.Exists() && promptTokens.Type != gjson.Number) ||
 		(completionTokens.Exists() && completionTokens.Type != gjson.Number) {
 		logging.Errorf("Error parsing tokens from response: usage fields must be numbers")

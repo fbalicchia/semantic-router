@@ -267,7 +267,12 @@ func extractAssistantContentFromResponse(responseBody []byte) string {
 		return ""
 	}
 
+	// Try OpenAI format first, fall back to Anthropic format.
 	content := gjson.GetBytes(responseBody, "choices.0.message.content")
+	if content.Type != gjson.String {
+		// Anthropic format: content[0].text
+		content = gjson.GetBytes(responseBody, "content.0.text")
+	}
 	if content.Type != gjson.String {
 		return ""
 	}
