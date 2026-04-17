@@ -1,6 +1,8 @@
 package classification
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -179,15 +181,26 @@ func (c *AuthzClassifier) Classify(userID string, userGroups []string) (*AuthzRe
 	}, nil
 }
 
-// ParseUserGroups parses a comma-separated groups header value into a slice of group names.
+// ParseUserGroups parses a groups header value into a slice of group names.
+// It accepts both a JSON array (e.g. ["a","b"]) and a comma-separated string (e.g. "a,b").
 // Whitespace around group names is trimmed. Empty strings are excluded.
 func ParseUserGroups(headerValue string) []string {
-	if headerValue == "" {
+	v := strings.TrimSpace(headerValue)
+	if v == "" {
 		return nil
 	}
-	parts := strings.Split(headerValue, ",")
+	// Try base64 decoding first (Envoy Gateway base64-encodes JWT array claims).
+	if decoded, err := base64.StdEncoding.DecodeString(v); err == nil && len(decoded) > 0 && decoded[0] == '[' {
+		v = string(decoded)
+	}
+	if strings.HasPrefix(v, "[") {
+		var arr []string
+		if err := json.Unmarshal([]byte(v), &arr); err == nil {
+			return arr
+		}
+	}
 	var groups []string
-	for _, p := range parts {
+	for _, p := range strings.Split(v, ",") {
 		g := strings.TrimSpace(p)
 		if g != "" {
 			groups = append(groups, g)

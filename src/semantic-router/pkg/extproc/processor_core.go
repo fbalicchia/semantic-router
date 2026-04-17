@@ -70,6 +70,13 @@ func (r *OpenAIRouter) handleProcessReceiveError(ctx *RequestContext, err error)
 	if ctx.IsStreamingResponse && !ctx.StreamingComplete {
 		ctx.StreamingAborted = true
 		logging.Debugf("Streaming response aborted before completion, will not cache")
+
+		// If usage was captured before the stream aborted, still report it.
+		hasUsage := ctx.StreamingMetadata != nil && ctx.StreamingMetadata["usage"] != nil
+		if hasUsage && r != nil {
+			usage, cacheUsage := extractStreamingUsage(ctx)
+			r.reportStreamingUsageMetrics(ctx, usage, cacheUsage)
+		}
 	}
 
 	if errors.Is(err, io.EOF) {

@@ -409,4 +409,36 @@ func TestParseUserGroups(t *testing.T) {
 		RegisterTestingT(t)
 		Expect(ParseUserGroups("premium,,basic,")).To(Equal([]string{"premium", "basic"}))
 	})
+
+	t.Run("JSON array", func(t *testing.T) {
+		RegisterTestingT(t)
+		Expect(ParseUserGroups(`["102","25","96","ai-power-user"]`)).To(Equal([]string{"102", "25", "96", "ai-power-user"}))
+	})
+
+	t.Run("JSON array single element", func(t *testing.T) {
+		RegisterTestingT(t)
+		Expect(ParseUserGroups(`["admin"]`)).To(Equal([]string{"admin"}))
+	})
+
+	t.Run("JSON array empty", func(t *testing.T) {
+		RegisterTestingT(t)
+		Expect(ParseUserGroups(`[]`)).To(Equal([]string{}))
+	})
+
+	t.Run("malformed JSON falls back to comma split", func(t *testing.T) {
+		RegisterTestingT(t)
+		Expect(ParseUserGroups(`[broken`)).To(Equal([]string{"[broken"}))
+	})
+
+	t.Run("base64 encoded JSON array", func(t *testing.T) {
+		RegisterTestingT(t)
+		// WyIxMDIiLCIyNSIsIjk2IiwiYWktcG93ZXItdXNlciJd = base64(["102","25","96","ai-power-user"])
+		Expect(ParseUserGroups("WyIxMDIiLCIyNSIsIjk2IiwiYWktcG93ZXItdXNlciJd")).To(Equal([]string{"102", "25", "96", "ai-power-user"}))
+	})
+
+	t.Run("base64 encoded single group", func(t *testing.T) {
+		RegisterTestingT(t)
+		// WyJhZG1pbiJd = base64(["admin"])
+		Expect(ParseUserGroups("WyJhZG1pbiJd")).To(Equal([]string{"admin"}))
+	})
 }

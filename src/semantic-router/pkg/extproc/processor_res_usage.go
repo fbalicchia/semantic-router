@@ -195,11 +195,26 @@ func extractStreamingUsage(ctx *RequestContext) (openai.CompletionUsage, streami
 	if promptTokens, ok := usageMap["prompt_tokens"].(float64); ok {
 		usage.PromptTokens = int64(promptTokens)
 	}
+	// Anthropic streaming format uses input_tokens instead of prompt_tokens
+	if usage.PromptTokens == 0 {
+		if inputTokens, ok := usageMap["input_tokens"].(float64); ok {
+			usage.PromptTokens = int64(inputTokens)
+		}
+	}
 	if completionTokens, ok := usageMap["completion_tokens"].(float64); ok {
 		usage.CompletionTokens = int64(completionTokens)
 	}
+	// Anthropic streaming format uses output_tokens instead of completion_tokens
+	if usage.CompletionTokens == 0 {
+		if outputTokens, ok := usageMap["output_tokens"].(float64); ok {
+			usage.CompletionTokens = int64(outputTokens)
+		}
+	}
 	if totalTokens, ok := usageMap["total_tokens"].(float64); ok {
 		usage.TotalTokens = int64(totalTokens)
+	}
+	if usage.TotalTokens == 0 {
+		usage.TotalTokens = usage.PromptTokens + usage.CompletionTokens
 	}
 	// Anthropic cache tokens
 	if v, ok := usageMap["cache_read_input_tokens"].(float64); ok {

@@ -3,13 +3,13 @@ package extproc
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	ext_proc "github.com/envoyproxy/go-control-plane/envoy/service/ext_proc/v3"
 	typev3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/openai/openai-go"
 
+	"github.com/vllm-project/semantic-router/src/semantic-router/pkg/classification"
 	"github.com/vllm-project/semantic-router/src/semantic-router/pkg/config"
 	"github.com/vllm-project/semantic-router/src/semantic-router/pkg/memory"
 	"github.com/vllm-project/semantic-router/src/semantic-router/pkg/observability/logging"
@@ -242,15 +242,7 @@ func (r *OpenAIRouter) getUserIDFromContext(ctx *RequestContext) string {
 func (r *OpenAIRouter) buildRateLimitContext(ctx *RequestContext, selectedModel string) ratelimit.Context {
 	userID := ctx.Headers[r.Config.Authz.Identity.GetUserIDHeader()]
 	groupsStr := ctx.Headers[r.Config.Authz.Identity.GetUserGroupsHeader()]
-	var groups []string
-	if groupsStr != "" {
-		for _, g := range strings.Split(groupsStr, ",") {
-			g = strings.TrimSpace(g)
-			if g != "" {
-				groups = append(groups, g)
-			}
-		}
-	}
+	groups := classification.ParseUserGroups(groupsStr)
 
 	return ratelimit.Context{
 		UserID:     userID,
