@@ -50,6 +50,10 @@ spec:
         - name: TARGET_JAEGER_URL
           value: "http://{{ .Release.Name }}-jaeger-query:16686"
         {{- end }}
+        {{- if .Values.dashboard.persistence.enabled }}
+        - name: DASHBOARD_AUTH_DB_PATH
+          value: "/data/auth.db"
+        {{- end }}
         volumeMounts:
         - name: config-volume
           mountPath: /app/config/config.yaml
@@ -59,6 +63,10 @@ spec:
           mountPath: /app/config/tools_db.json
           subPath: tools_db.json
           readOnly: true
+        {{- if .Values.dashboard.persistence.enabled }}
+        - name: dashboard-data
+          mountPath: /data
+        {{- end }}
         livenessProbe:
           httpGet:
             path: /healthz
@@ -77,4 +85,9 @@ spec:
       - name: config-volume
         configMap:
           name: {{ include "semantic-router.fullname" . }}-config
+      {{- if .Values.dashboard.persistence.enabled }}
+      - name: dashboard-data
+        persistentVolumeClaim:
+          claimName: {{ include "semantic-router.fullname" . }}-dashboard-data
+      {{- end }}
 {{- end }}

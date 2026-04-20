@@ -515,6 +515,12 @@ dashboard:
     requests:
       memory: "128Mi"
       cpu: "100m"
+  # -- Persistent storage for dashboard data (auth DB, etc.)
+  persistence:
+    enabled: false
+    storageClassName: ""
+    accessMode: ReadWriteOnce
+    size: 1Gi
 
 dependencies:
   semanticCache:
